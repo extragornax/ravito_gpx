@@ -1,0 +1,67 @@
+# Deploys ravito_gpx to a remote server over SSH on every push.
+#
+# Secrets (Repo → Settings → Secrets and variables → Actions → Secrets):
+#   DEPLOY_HOST    — hostname or IP of the target server
+#   DEPLOY_USER    — SSH username
+#   DEPLOY_SSH_KEY — private SSH key (id_ed25519 contents); matching public key
+#                    must be in the user's authorized_keys on the server
+# Optional secret:
+#   DEPLOY_PORT    — SSH port if not 22
+#
+# Optional variable (Repo → Settings → Secrets and variables → Actions → Variables):
+#   DEPLOY_PATH    — path to the repo on the server (default: /srv/ravito_gpx)
+#
+# Server prereqs:
+#   - Repo cloned at DEPLOY_PATH with origin pointing at this GitHub repo.
+#   - Deploy user can run `docker compose` (member of the `docker` group).
+#   - `git pull --ff-only` works (no uncommitted local changes).
+#
+# Manual run: Actions → Deploy → "Run workflow".
+
+name: Deploy
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ vars.DEPLOY_PATH || '/srv/ravito_gpx' }}"
+            echo "== Pulling latest =="
+            git fetch --prune origin
+            git checkout "${{ github.ref_name }}"
+            git pull --ff-only origin "${{ github.ref_name }}"
+            echo "== Rebuilding container =="
+            docker compose up -d --build --remove-orphans
+            echo "== Waiting for healthy =="
+            for i in $(seq 1 20); do
+              status=$(docker inspect --format='{{.State.Health.Status}}' ravito_gpx 2>/dev/null || echo "none")
+              echo "health[$i]: $status"
+              if [ "$status" = "healthy" ]; then
+                docker image prune -f
+                echo "== Deploy OK =="
+                exit 0
+              fi
+              sleep 3
+            done
+            echo "== Container not healthy after 60s ==" >&2
+            docker compose logs --tail=80 ravito || true
+            exit 1

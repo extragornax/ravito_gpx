@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ravito_gpx — refuel stops along your ride</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>ravito_gpx</h1>
+    <p class="subtitle">
+      Paste a GPX, pick a departure and an average speed, and get every
+      bakery, supermarket, bar-tabac and water fountain inside a corridor
+      around your route — with OSM opening hours evaluated at the time
+      <em>you</em> actually roll past.
+    </p>
+  </header>
+
+  <form id="f" class="card">
+    <div class="field">
+      <label for="sample">Sample GPX</label>
+      <select id="sample"><option value="">— none —</option></select>
+    </div>
+    <div class="field">
+      <label for="gpx">Or paste GPX XML</label>
+      <textarea id="gpx" rows="5" placeholder="<?xml version='1.0' ...><gpx>..."></textarea>
+    </div>
+    <div class="field">
+      <label for="upload">Or upload a file</label>
+      <input type="file" id="upload" accept=".gpx,application/gpx+xml,text/xml">
+    </div>
+
+    <div class="row3">
+      <div class="field">
+        <label for="start">Start (local time)</label>
+        <input type="datetime-local" id="start">
+      </div>
+      <div class="field">
+        <label for="speed">Avg speed (km/h)</label>
+        <input type="number" id="speed" value="22" min="5" max="60" step="1">
+      </div>
+      <div class="field">
+        <label for="corridor">Corridor (m)</label>
+        <input type="number" id="corridor" value="120" min="20" max="2000" step="10">
+      </div>
+    </div>
+
+    <div class="kinds">
+      <label><input type="checkbox" class="kind" value="bakery" checked> 🥐 bakery</label>
+      <label><input type="checkbox" class="kind" value="supermarket" checked> 🛒 supermarket</label>
+      <label><input type="checkbox" class="kind" value="bar_tabac" checked> ☕ bar/cafe</label>
+      <label><input type="checkbox" class="kind" value="fountain" checked> 💧 fountain</label>
+    </div>
+
+    <button type="submit">Find refuel stops</button>
+    <p id="status" class="status"></p>
+  </form>
+
+  <section id="results" hidden>
+    <div class="card">
+      <h2>Stops along the route</h2>
+      <p id="legend" class="legend"></p>
+      <div class="chart-wrap">
+        <svg id="chart" viewBox="0 0 1200 260" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Stop list</h2>
+      <div class="table-wrap">
+        <table id="tbl">
+          <thead>
+            <tr><th>km</th><th>kind</th><th>name</th><th>ETA</th><th>status</th><th>hours</th><th>detour</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+
+const KIND_ICON = { bakery: '🥐', supermarket: '🛒', bar_tabac: '☕', fountain: '💧', other: '•' };
+const KIND_COLOR = { bakery: '#c47a2b', supermarket: '#2b6fc9', bar_tabac: '#6a3fb5', fountain: '#2ca7c9', other: '#888' };
+
+async function loadSamples() {
+  try {
+    const r = await fetch('/api/samples');
+    const list = await r.json();
+    const sel = $('#sample');
+    for (const s of list) {
+      const o = document.createElement('option');
+      o.value = s.path; o.textContent = s.name;
+      sel.appendChild(o);
+    }
+  } catch (_) {}
+}
+
+function initStart() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  d.setSeconds(0, 0);
+  d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15);
+  $('#start').value = d.toISOString().slice(0, 16);
+}
+
+async function submit(ev) {
+  ev.preventDefault();
+  $('#status').textContent = 'Querying OSM…';
+  let gpx = $('#gpx').value.trim();
+  const sample = $('#sample').value;
+  const upload = $('#upload').files[0];
+  try {
+    if (upload) gpx = await upload.text();
+    else if (!gpx && sample) {
+      const r = await fetch('/api/sample/' + encodeURIComponent(sample));
+      if (!r.ok) throw new Error('sample fetch failed');
+      gpx = await r.text();
+    }
+    if (!gpx) throw new Error('no GPX provided');
+    const local = $('#start').value;
+    const start = local ? new Date(local).toISOString() : null;
+    const speed_kmh = Number($('#speed').value) || 22;
+    const corridor_m = Number($('#corridor').value) || 120;
+    const kinds = [...document.querySelectorAll('.kind:checked')].map(k => k.value);
+    const resp = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ gpx, start, speed_kmh, corridor_m, kinds }),
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    render(data);
+    $('#results').hidden = false;
+    $('#status').textContent = '';
+  } catch (e) {
+    $('#status').textContent = 'Error: ' + (e.message || e);
+  }
+}
+
+function render(data) {
+  const startDate = new Date(data.start_unix * 1000);
+  const endDate = new Date((data.start_unix + (data.total_km / data.speed_kmh) * 3600) * 1000);
+  const counts = {};
+  for (const p of data.pois) counts[p.kind] = (counts[p.kind] || 0) + 1;
+  const countStr = Object.entries(counts)
+    .map(([k, v]) => `${KIND_ICON[k] || '•'} ${v} ${k}`)
+    .join(' · ') || '(none found in corridor)';
+  $('#legend').innerHTML =
+    `Depart <b>${startDate.toLocaleString()}</b> · finish <b>${endDate.toLocaleString()}</b> ·
+     ${data.total_km.toFixed(1)} km @ ${data.speed_kmh.toFixed(0)} km/h ·
+     corridor ±${data.corridor_m.toFixed(0)} m — ${countStr}`;
+  renderChart(data);
+  renderTable(data);
+}
+
+function renderChart(data) {
+  const svg = $('#chart');
+  svg.innerHTML = '';
+  const W = 1200, H = 260;
+  const M = { l: 40, r: 16, t: 16, b: 40 };
+  const plotW = W - M.l - M.r;
+  const trackY = M.t + 100;
+  const rowH = 26;
+
+  const xMax = Math.max(1, data.total_km);
+  const x = km => M.l + (km / xMax) * plotW;
+
+  // Baseline route.
+  svg.insertAdjacentHTML('beforeend',
+    `<line x1="${M.l}" x2="${W - M.r}" y1="${trackY}" y2="${trackY}"
+           stroke="#444" stroke-width="2"/>`);
+
+  // Km ticks.
+  const step = xMax > 200 ? 50 : xMax > 80 ? 20 : xMax > 30 ? 10 : 5;
+  for (let km = 0; km <= xMax; km += step) {
+    const xx = x(km);
+    svg.insertAdjacentHTML('beforeend',
+      `<line x1="${xx}" y1="${trackY - 4}" x2="${xx}" y2="${trackY + 4}" stroke="#333"/>
+       <text x="${xx}" y="${trackY + 18}" text-anchor="middle" font-size="11" fill="#333">${km} km</text>`);
+  }
+
+  // POI markers: above track by kind lane, with colour by open/closed.
+  const lane = {
+    bakery: trackY - 60,
+    supermarket: trackY - 40,
+    bar_tabac: trackY - 20,
+    fountain: trackY + 30,
+    other: trackY + 50,
+  };
+  for (const p of data.pois) {
+    const cx = x(p.km);
+    const cy = lane[p.kind] ?? trackY;
+    const stroke = KIND_COLOR[p.kind] || '#888';
+    const fill =
+      p.status_at_eta === 'open' ? stroke :
+      p.status_at_eta === 'closed' ? '#fff' :
+      '#e8e8e8';
+    svg.insertAdjacentHTML('beforeend',
+      `<line x1="${cx}" y1="${trackY}" x2="${cx}" y2="${cy}" stroke="#bbb"/>
+       <circle cx="${cx}" cy="${cy}" r="5" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
+       <title>${(p.name || p.kind) + ' @ ' + p.km.toFixed(1) + ' km · ' + p.status_at_eta}</title>`);
+  }
+
+  // Lane labels.
+  svg.insertAdjacentHTML('beforeend',
+    `<text x="4" y="${trackY - 58}" font-size="11" fill="#c47a2b">🥐 bakery</text>
+     <text x="4" y="${trackY - 38}" font-size="11" fill="#2b6fc9">🛒 super</text>
+     <text x="4" y="${trackY - 18}" font-size="11" fill="#6a3fb5">☕ café</text>
+     <text x="4" y="${trackY + 32}" font-size="11" fill="#2ca7c9">💧 fount.</text>`);
+}
+
+function renderTable(data) {
+  const tb = $('#tbl tbody');
+  tb.innerHTML = '';
+  for (const p of data.pois) {
+    const eta = new Date(p.eta_unix * 1000);
+    const statusCls =
+      p.status_at_eta === 'open' ? 'st-open' :
+      p.status_at_eta === 'closed' ? 'st-closed' : 'st-unknown';
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td>${p.km.toFixed(1)}</td>
+       <td>${KIND_ICON[p.kind] || '•'} ${p.kind}</td>
+       <td>${(p.name || '—').replace(/</g, '&lt;')}</td>
+       <td>${eta.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</td>
+       <td class="${statusCls}">${p.status_at_eta}</td>
+       <td class="mono">${p.opening_hours ? p.opening_hours.replace(/</g, '&lt;') : '—'}</td>
+       <td>${p.detour_m.toFixed(0)} m</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+loadSamples();
+initStart();
+$('#f').addEventListener('submit', submit);
+</script>
+</body>
+</html>

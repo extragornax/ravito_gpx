@@ -1,0 +1,85 @@
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #f0f2f5;
+  color: #1a1a1a;
+  margin: 0;
+  padding: 2rem 1rem;
+}
+main { max-width: 1200px; margin: 0 auto; }
+header h1 { font-size: 1.8rem; margin: 0 0 0.25rem; }
+.subtitle { color: #555; margin: 0 0 1.5rem; font-size: 0.95rem; }
+.card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.04);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.card h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.9rem;
+}
+.field label { font-size: 0.85rem; font-weight: 600; color: #444; margin-bottom: 0.3rem; }
+.field select,
+.field input[type="text"],
+.field input[type="number"],
+.field input[type="datetime-local"],
+.field input[type="file"],
+.field textarea {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: #fafafa;
+}
+.field textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+.row3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.8rem;
+}
+@media (max-width: 640px) { .row3 { grid-template-columns: 1fr; } }
+.kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0.5rem 0 1rem;
+  font-size: 0.9rem;
+}
+.kinds label { display: inline-flex; align-items: center; gap: 0.35rem; }
+button[type="submit"] {
+  padding: 0.7rem 1.2rem;
+  background: #2b6fc9;
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+button[type="submit"]:hover { background: #245ca8; }
+.status { margin: 0.6rem 0 0; color: #a33; font-size: 0.85rem; min-height: 1em; }
+.legend { color: #333; font-size: 0.9rem; margin: 0 0 0.5rem; }
+.chart-wrap { width: 100%; overflow-x: auto; }
+#chart { width: 100%; min-width: 900px; height: auto; background: #fff; }
+.table-wrap { overflow-x: auto; }
+#tbl { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+#tbl th, #tbl td {
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  vertical-align: top;
+}
+#tbl td:first-child, #tbl td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+#tbl thead { background: #f7f7f9; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; color: #333; }
+.st-open { color: #1b7a3a; font-weight: 600; }
+.st-closed { color: #b22b3a; font-weight: 600; }
+.st-unknown { color: #888; }
