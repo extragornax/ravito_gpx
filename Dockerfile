@@ -13,11 +13,10 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates wget \
     && rm -rf /var/lib/apt/lists/* \
     && useradd -m -u 1000 app \
-    && mkdir -p /app/data /app/static \
+    && mkdir -p /app/data \
     && chown -R app:app /app
 WORKDIR /app
 COPY --from=builder /src/target/release/ravito_gpx /usr/local/bin/ravito_gpx
-COPY static /app/static
 USER app
 ENV PORT=3000
 ENV DB_PATH=/app/data/ravito.db

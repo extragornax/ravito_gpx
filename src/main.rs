@@ -12,7 +12,6 @@ use axum::{
     extract::DefaultBodyLimit,
     routing::{get, post},
 };
-use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
 use crate::handlers::AppState;
@@ -39,8 +38,8 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/", get(handlers::index))
+        .route("/static/app.css", get(handlers::app_css))
         .route("/api/analyze", post(handlers::analyze))
-        .nest_service("/static", ServeDir::new("static"))
         .with_state(state)
         .layer(DefaultBodyLimit::max(20 * 1024 * 1024))
         .layer(TraceLayer::new_for_http());
