@@ -3,85 +3,190 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ravito_gpx — refuel stops along your ride</title>
+<title>ravito — cue sheet for long-distance riders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;0,9..144,900;1,9..144,400;1,9..144,700;1,9..144,900&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
+<div class="grain" aria-hidden="true"></div>
+
 <main>
-  <header>
-    <h1>ravito_gpx</h1>
-    <p class="subtitle">
-      Paste a GPX, pick a departure and an average speed, and get every
-      bakery, supermarket, bar-tabac and water fountain inside a corridor
-      around your route — with OSM opening hours evaluated at the time
+  <header class="masthead">
+    <div class="edition">
+      <span>Nº 001</span>
+      <span>Longues distances</span>
+      <span class="dot">✦</span>
+      <span>Pain · Eau · Café</span>
+      <span class="edition-date" id="ed-date"></span>
+    </div>
+
+    <h1 class="title">
+      <span class="title-main">ravito</span><span class="slash">/</span><span class="title-sub">gpx</span>
+    </h1>
+
+    <p class="tagline">
+      Paste a GPX trace, name your hour of departure, set a cruising speed — and we'll
+      hunt down every <em>boulangerie</em>, grocer, bar-tabac and fountain within reach of
+      your tyres, each one checked against the opening hours for the clock
       <em>you</em> actually roll past.
     </p>
+
+    <div class="rule-double"></div>
   </header>
 
-  <form id="f" class="card">
-    <div class="field">
-      <label for="gpx">Paste GPX XML</label>
-      <textarea id="gpx" rows="5" placeholder="<?xml version='1.0' ...><gpx>..."></textarea>
+  <form id="f" class="brevet" autocomplete="off">
+    <div class="brevet-head">
+      <span class="stamp">Carnet de route</span>
+      <span class="stamp-sub">Remplir les cases</span>
     </div>
+
     <div class="field">
-      <label for="upload">Or upload a file</label>
+      <label for="gpx"><span class="num">①</span> Trace GPX</label>
+      <textarea id="gpx" rows="4" spellcheck="false" placeholder="&lt;?xml version='1.0' ...&gt;&#10;&lt;gpx&gt;&#10;  &lt;trk&gt;&lt;trkseg&gt;&#10;    &lt;trkpt lat='48.8566' lon='2.3522'/&gt;&#10;    ..."></textarea>
+    </div>
+
+    <div class="field">
+      <label for="upload"><span class="num">②</span> Or upload a .gpx file</label>
       <input type="file" id="upload" accept=".gpx,application/gpx+xml,text/xml">
     </div>
 
     <div class="row3">
       <div class="field">
-        <label for="start">Start (local time)</label>
+        <label for="start"><span class="num">③</span> Départ (local time)</label>
         <input type="datetime-local" id="start">
       </div>
       <div class="field">
-        <label for="speed">Avg speed (km/h)</label>
-        <input type="number" id="speed" value="22" min="5" max="60" step="1">
+        <label for="speed"><span class="num">④</span> Vitesse moyenne</label>
+        <div class="input-row">
+          <input type="number" id="speed" value="22" min="5" max="60" step="1">
+          <span class="unit">km/h</span>
+        </div>
       </div>
       <div class="field">
-        <label for="corridor">Corridor (m)</label>
-        <input type="number" id="corridor" value="120" min="20" max="2000" step="10">
+        <label for="corridor"><span class="num">⑤</span> Corridor</label>
+        <div class="input-row">
+          <input type="number" id="corridor" value="120" min="20" max="2000" step="10">
+          <span class="unit">mètres</span>
+        </div>
       </div>
     </div>
 
-    <div class="kinds">
-      <label><input type="checkbox" class="kind" value="bakery" checked> 🥐 bakery</label>
-      <label><input type="checkbox" class="kind" value="supermarket" checked> 🛒 supermarket</label>
-      <label><input type="checkbox" class="kind" value="bar_tabac" checked> ☕ bar/cafe</label>
-      <label><input type="checkbox" class="kind" value="fountain" checked> 💧 fountain</label>
-    </div>
+    <fieldset class="kinds">
+      <legend><span class="num">⑥</span> Chercher</legend>
+      <label>
+        <input type="checkbox" class="kind" value="bakery" checked>
+        <span class="mark"></span>
+        <span class="kind-label"><span class="glyph">🥐</span>Boulangerie</span>
+      </label>
+      <label>
+        <input type="checkbox" class="kind" value="supermarket" checked>
+        <span class="mark"></span>
+        <span class="kind-label"><span class="glyph">🛒</span>Supermarché</span>
+      </label>
+      <label>
+        <input type="checkbox" class="kind" value="bar_tabac" checked>
+        <span class="mark"></span>
+        <span class="kind-label"><span class="glyph">☕</span>Bar-tabac</span>
+      </label>
+      <label>
+        <input type="checkbox" class="kind" value="fountain" checked>
+        <span class="mark"></span>
+        <span class="kind-label"><span class="glyph">💧</span>Fontaine</span>
+      </label>
+    </fieldset>
 
-    <button type="submit">Find refuel stops</button>
-    <p id="status" class="status"></p>
+    <div class="actions">
+      <button type="submit">
+        <span class="btn-arrow">▸</span>
+        <span class="btn-label">Plot the run</span>
+      </button>
+      <p id="status" class="status"></p>
+    </div>
   </form>
 
   <section id="results" hidden>
-    <div class="card">
-      <h2>Stops along the route</h2>
-      <p id="legend" class="legend"></p>
-      <div class="chart-wrap">
-        <svg id="chart" viewBox="0 0 1200 260" preserveAspectRatio="xMidYMid meet"></svg>
-      </div>
-    </div>
+    <article class="cahier cahier-summary">
+      <header class="cahier-head">
+        <div class="cahier-title">
+          <span class="kicker">Cahier de route</span>
+          <h2>Overview</h2>
+        </div>
+        <figure class="silhouette-wrap">
+          <svg id="silhouette" viewBox="0 0 240 90" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+          <figcaption>TRACÉ</figcaption>
+        </figure>
+      </header>
+      <dl id="legend" class="legend-grid"></dl>
+    </article>
 
-    <div class="card">
-      <h2>Stop list</h2>
+    <article class="cahier">
+      <header class="cahier-head">
+        <div class="cahier-title">
+          <span class="kicker">Profil des arrêts</span>
+          <h2>Stops along the route</h2>
+        </div>
+        <div class="chart-legend" aria-hidden="true">
+          <span class="cl-item"><span class="cl-dot cl-open"></span>Ouvert</span>
+          <span class="cl-item"><span class="cl-dot cl-closed"></span>Fermé</span>
+          <span class="cl-item"><span class="cl-dot cl-unknown"></span>Inconnu</span>
+        </div>
+      </header>
+      <div class="chart-wrap">
+        <svg id="chart" viewBox="0 0 1200 320" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </article>
+
+    <article class="cahier">
+      <header class="cahier-head">
+        <div class="cahier-title">
+          <span class="kicker">Tableau complet</span>
+          <h2>Every ravito, in order</h2>
+        </div>
+      </header>
       <div class="table-wrap">
         <table id="tbl">
           <thead>
-            <tr><th>km</th><th>kind</th><th>name</th><th>ETA</th><th>status</th><th>hours</th><th>detour</th></tr>
+            <tr>
+              <th class="h-km">km</th>
+              <th>genre</th>
+              <th>enseigne</th>
+              <th>ETA</th>
+              <th>état</th>
+              <th>horaires</th>
+              <th class="h-detour">détour</th>
+            </tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
-    </div>
+    </article>
   </section>
+
+  <footer class="colophon">
+    <span class="col-left">— Fin —</span>
+    <span class="col-mid">Pour les longues journées en selle.</span>
+    <span class="col-right">ravito/gpx · self-hosted</span>
+  </footer>
 </main>
 
 <script>
 const $ = s => document.querySelector(s);
 
-const KIND_ICON = { bakery: '🥐', supermarket: '🛒', bar_tabac: '☕', fountain: '💧', other: '•' };
-const KIND_COLOR = { bakery: '#c47a2b', supermarket: '#2b6fc9', bar_tabac: '#6a3fb5', fountain: '#2ca7c9', other: '#888' };
+const KIND = {
+  bakery:      { glyph: '🥐', label: 'boulangerie', color: '#a46a1c' },
+  supermarket: { glyph: '🛒', label: 'supermarché', color: '#2b261b' },
+  bar_tabac:   { glyph: '☕', label: 'bar-tabac',   color: '#6b2238' },
+  fountain:    { glyph: '💧', label: 'fontaine',    color: '#1b4a8a' },
+  other:       { glyph: '•',  label: 'autre',       color: '#79654a' },
+};
+
+const INK = '#14110a';
+const PAPER = '#f1e8d5';
+const RED = '#b8202a';
+const BLUE = '#1b4a8a';
+const SEPIA = '#79654a';
 
 function initStart() {
   const d = new Date();
@@ -91,9 +196,22 @@ function initStart() {
   $('#start').value = d.toISOString().slice(0, 16);
 }
 
+function initEditionDate() {
+  const now = new Date();
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  $('#ed-date').textContent =
+    String(now.getDate()).padStart(2,'0') + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+}
+
+function setStatus(msg, kind) {
+  const el = $('#status');
+  el.textContent = msg || '';
+  el.dataset.kind = kind || '';
+}
+
 async function submit(ev) {
   ev.preventDefault();
-  $('#status').textContent = 'Querying OSM…';
+  setStatus('Querying OpenStreetMap…', 'info');
   let gpx = $('#gpx').value.trim();
   const upload = $('#upload').files[0];
   try {
@@ -112,107 +230,222 @@ async function submit(ev) {
     if (!resp.ok) throw new Error(await resp.text());
     const data = await resp.json();
     render(data);
-    $('#results').hidden = false;
-    $('#status').textContent = '';
+    const results = $('#results');
+    results.hidden = false;
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setStatus('');
   } catch (e) {
-    $('#status').textContent = 'Error: ' + (e.message || e);
+    setStatus('Error: ' + (e.message || e), 'error');
   }
+}
+
+function fmtTime(d) {
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function fmtDate(d) {
+  return d.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: 'short' });
+}
+function hoursMins(totalMin) {
+  const h = Math.floor(totalMin / 60);
+  const m = Math.round(totalMin - h * 60);
+  return (h ? h + 'h ' : '') + String(m).padStart(2,'0') + 'm';
 }
 
 function render(data) {
   const startDate = new Date(data.start_unix * 1000);
-  const endDate = new Date((data.start_unix + (data.total_km / data.speed_kmh) * 3600) * 1000);
-  const counts = {};
-  for (const p of data.pois) counts[p.kind] = (counts[p.kind] || 0) + 1;
-  const countStr = Object.entries(counts)
-    .map(([k, v]) => `${KIND_ICON[k] || '•'} ${v} ${k}`)
-    .join(' · ') || '(none found in corridor)';
-  $('#legend').innerHTML =
-    `Depart <b>${startDate.toLocaleString()}</b> · finish <b>${endDate.toLocaleString()}</b> ·
-     ${data.total_km.toFixed(1)} km @ ${data.speed_kmh.toFixed(0)} km/h ·
-     corridor ±${data.corridor_m.toFixed(0)} m — ${countStr}`;
+  const durationMin = (data.total_km / data.speed_kmh) * 60;
+  const endDate = new Date((data.start_unix + durationMin * 60) * 1000);
+
+  const openCount = data.pois.filter(p => p.status_at_eta === 'open').length;
+  const closedCount = data.pois.filter(p => p.status_at_eta === 'closed').length;
+
+  const dl = $('#legend');
+  dl.innerHTML = `
+    <div><dt>Départ</dt><dd>${fmtDate(startDate)} <span class="unit-sm">· ${fmtTime(startDate)}</span></dd></div>
+    <div><dt>Arrivée estimée</dt><dd>${fmtDate(endDate)} <span class="unit-sm">· ${fmtTime(endDate)}</span></dd></div>
+    <div><dt>Distance</dt><dd class="big">${data.total_km.toFixed(1)}<span class="unit-sm">km</span></dd></div>
+    <div><dt>Durée</dt><dd>${hoursMins(durationMin)}</dd></div>
+    <div><dt>Vitesse</dt><dd>${data.speed_kmh.toFixed(0)}<span class="unit-sm">km/h</span></dd></div>
+    <div><dt>Corridor</dt><dd>±${data.corridor_m.toFixed(0)}<span class="unit-sm">m</span></dd></div>
+    <div><dt>Ravitos</dt><dd class="big">${data.pois.length}</dd></div>
+    <div><dt>Ouverts / Fermés</dt><dd><span class="st-inline st-open-inline">${openCount}</span> <span class="sep">/</span> <span class="st-inline st-closed-inline">${closedCount}</span></dd></div>
+  `;
+
+  renderSilhouette(data);
   renderChart(data);
   renderTable(data);
+}
+
+function renderSilhouette(data) {
+  const svg = $('#silhouette');
+  svg.innerHTML = '';
+  const route = data.route || [];
+  if (route.length < 2) return;
+  let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+  for (const r of route) {
+    if (r.lat < minLat) minLat = r.lat;
+    if (r.lat > maxLat) maxLat = r.lat;
+    if (r.lon < minLon) minLon = r.lon;
+    if (r.lon > maxLon) maxLon = r.lon;
+  }
+  const W = 240, H = 90, P = 10;
+  const dx = Math.max(1e-9, maxLon - minLon);
+  const dy = Math.max(1e-9, maxLat - minLat);
+  const latScale = Math.cos(((minLat + maxLat) / 2) * Math.PI / 180);
+  const viewW = W - 2*P, viewH = H - 2*P;
+  const aspect = (dx * latScale) / dy;
+  const boxAspect = viewW / viewH;
+  const scale = aspect > boxAspect ? viewW / (dx * latScale) : viewH / dy;
+  const cx = (minLon + maxLon) / 2;
+  const cy = (minLat + maxLat) / 2;
+  const project = (lat, lon) => [
+    W/2 + (lon - cx) * latScale * scale,
+    H/2 - (lat - cy) * scale,
+  ];
+
+  const pts = route.map(r => project(r.lat, r.lon).map(v => v.toFixed(1)).join(',')).join(' ');
+  const [sx, sy] = project(route[0].lat, route[0].lon);
+  const last = route[route.length - 1];
+  const [ex, ey] = project(last.lat, last.lon);
+
+  svg.insertAdjacentHTML('beforeend', `
+    <polyline points="${pts}" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="3.5" fill="${BLUE}" stroke="${INK}" stroke-width="1"/>
+    <circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="3.5" fill="${RED}" stroke="${INK}" stroke-width="1"/>
+  `);
 }
 
 function renderChart(data) {
   const svg = $('#chart');
   svg.innerHTML = '';
-  const W = 1200, H = 260;
-  const M = { l: 40, r: 16, t: 16, b: 40 };
+  const W = 1200, H = 320;
+  const M = { l: 110, r: 40, t: 34, b: 64 };
   const plotW = W - M.l - M.r;
-  const trackY = M.t + 100;
-  const rowH = 26;
-
+  const trackY = M.t + 142;
   const xMax = Math.max(1, data.total_km);
   const x = km => M.l + (km / xMax) * plotW;
 
-  // Baseline route.
+  // Baseline track — heavy ink.
   svg.insertAdjacentHTML('beforeend',
-    `<line x1="${M.l}" x2="${W - M.r}" y1="${trackY}" y2="${trackY}"
-           stroke="#444" stroke-width="2"/>`);
+    `<line x1="${M.l}" x2="${W - M.r}" y1="${trackY}" y2="${trackY}" stroke="${INK}" stroke-width="3"/>`);
 
-  // Km ticks.
+  // Subtle guides above/below for lanes.
+  const lanes = [
+    { key: 'bakery',      y: trackY - 112, label: 'BOULANGERIE' },
+    { key: 'supermarket', y: trackY - 80,  label: 'SUPERMARCHÉ' },
+    { key: 'bar_tabac',   y: trackY - 48,  label: 'BAR-TABAC' },
+    { key: 'fountain',    y: trackY + 64,  label: 'FONTAINE' },
+  ];
+  for (const l of lanes) {
+    svg.insertAdjacentHTML('beforeend', `
+      <line x1="${M.l}" x2="${W - M.r}" y1="${l.y}" y2="${l.y}"
+            stroke="${SEPIA}" stroke-width="0.6" stroke-dasharray="2 5" opacity="0.55"/>
+      <text x="${M.l - 14}" y="${l.y + 4}" text-anchor="end"
+            font-family="JetBrains Mono,monospace" font-size="10"
+            fill="${INK}" letter-spacing="1.4">${l.label}</text>
+    `);
+  }
+
+  // km ticks.
   const step = xMax > 200 ? 50 : xMax > 80 ? 20 : xMax > 30 ? 10 : 5;
-  for (let km = 0; km <= xMax; km += step) {
+  for (let km = 0; km <= xMax + 0.001; km += step) {
     const xx = x(km);
-    svg.insertAdjacentHTML('beforeend',
-      `<line x1="${xx}" y1="${trackY - 4}" x2="${xx}" y2="${trackY + 4}" stroke="#333"/>
-       <text x="${xx}" y="${trackY + 18}" text-anchor="middle" font-size="11" fill="#333">${km} km</text>`);
+    const major = km % (step * 2) === 0 || step >= 20;
+    svg.insertAdjacentHTML('beforeend', `
+      <line x1="${xx}" y1="${trackY - (major ? 8 : 5)}" x2="${xx}" y2="${trackY + (major ? 8 : 5)}"
+            stroke="${INK}" stroke-width="${major ? 1.5 : 1}"/>
+      <text x="${xx}" y="${trackY + 28}" text-anchor="middle"
+            font-family="JetBrains Mono,monospace" font-size="11"
+            fill="${INK}" letter-spacing="0.5">${km}</text>
+    `);
   }
-
-  // POI markers: above track by kind lane, with colour by open/closed.
-  const lane = {
-    bakery: trackY - 60,
-    supermarket: trackY - 40,
-    bar_tabac: trackY - 20,
-    fountain: trackY + 30,
-    other: trackY + 50,
-  };
-  for (const p of data.pois) {
-    const cx = x(p.km);
-    const cy = lane[p.kind] ?? trackY;
-    const stroke = KIND_COLOR[p.kind] || '#888';
-    const fill =
-      p.status_at_eta === 'open' ? stroke :
-      p.status_at_eta === 'closed' ? '#fff' :
-      '#e8e8e8';
-    svg.insertAdjacentHTML('beforeend',
-      `<line x1="${cx}" y1="${trackY}" x2="${cx}" y2="${cy}" stroke="#bbb"/>
-       <circle cx="${cx}" cy="${cy}" r="5" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
-       <title>${(p.name || p.kind) + ' @ ' + p.km.toFixed(1) + ' km · ' + p.status_at_eta}</title>`);
-  }
-
-  // Lane labels.
   svg.insertAdjacentHTML('beforeend',
-    `<text x="4" y="${trackY - 58}" font-size="11" fill="#c47a2b">🥐 bakery</text>
-     <text x="4" y="${trackY - 38}" font-size="11" fill="#2b6fc9">🛒 super</text>
-     <text x="4" y="${trackY - 18}" font-size="11" fill="#6a3fb5">☕ café</text>
-     <text x="4" y="${trackY + 32}" font-size="11" fill="#2ca7c9">💧 fount.</text>`);
+    `<text x="${W - M.r}" y="${trackY + 48}" text-anchor="end"
+           font-family="JetBrains Mono,monospace" font-size="10"
+           fill="${SEPIA}" letter-spacing="2">KILOMÈTRES</text>`);
+
+  // POI markers.
+  for (const p of data.pois) {
+    const lane = lanes.find(l => l.key === p.kind);
+    const cy = lane ? lane.y : trackY - 20;
+    const cx = x(p.km);
+    const color = (KIND[p.kind] || KIND.other).color;
+    const status = p.status_at_eta;
+
+    svg.insertAdjacentHTML('beforeend',
+      `<line x1="${cx}" y1="${trackY}" x2="${cx}" y2="${cy}"
+             stroke="${INK}" stroke-width="0.8" opacity="0.4"/>`);
+
+    if (status === 'open') {
+      svg.insertAdjacentHTML('beforeend',
+        `<circle cx="${cx}" cy="${cy}" r="6.5" fill="${color}" stroke="${INK}" stroke-width="1.3"/>`);
+    } else if (status === 'closed') {
+      svg.insertAdjacentHTML('beforeend', `
+        <circle cx="${cx}" cy="${cy}" r="6.5" fill="${PAPER}" stroke="${RED}" stroke-width="1.6"/>
+        <line x1="${cx - 5}" y1="${cy - 5}" x2="${cx + 5}" y2="${cy + 5}" stroke="${RED}" stroke-width="1.6"/>
+      `);
+    } else {
+      svg.insertAdjacentHTML('beforeend',
+        `<circle cx="${cx}" cy="${cy}" r="6" fill="${PAPER}" stroke="${SEPIA}"
+                 stroke-width="1.2" stroke-dasharray="2 2"/>`);
+    }
+
+    svg.insertAdjacentHTML('beforeend',
+      `<title>${escapeAttr((p.name || p.kind)) } — ${p.km.toFixed(1)} km — ${status}</title>`);
+  }
+
+  // Départ / Arrivée.
+  svg.insertAdjacentHTML('beforeend', `
+    <g>
+      <circle cx="${x(0)}" cy="${trackY}" r="5.5" fill="${BLUE}" stroke="${INK}" stroke-width="1.2"/>
+      <text x="${x(0)}" y="${trackY - 14}" text-anchor="middle"
+            font-family="Fraunces,serif" font-style="italic" font-size="14" font-weight="700"
+            fill="${BLUE}">départ</text>
+    </g>
+    <g>
+      <circle cx="${x(xMax)}" cy="${trackY}" r="5.5" fill="${RED}" stroke="${INK}" stroke-width="1.2"/>
+      <text x="${x(xMax)}" y="${trackY - 14}" text-anchor="middle"
+            font-family="Fraunces,serif" font-style="italic" font-size="14" font-weight="700"
+            fill="${RED}">arrivée</text>
+    </g>
+  `);
 }
 
 function renderTable(data) {
   const tb = $('#tbl tbody');
   tb.innerHTML = '';
+  if (!data.pois.length) {
+    tb.innerHTML = `<tr><td colspan="7" class="empty">No ravitaillement points found inside this corridor. Try widening it.</td></tr>`;
+    return;
+  }
   for (const p of data.pois) {
     const eta = new Date(p.eta_unix * 1000);
-    const statusCls =
-      p.status_at_eta === 'open' ? 'st-open' :
-      p.status_at_eta === 'closed' ? 'st-closed' : 'st-unknown';
+    const kind = KIND[p.kind] || KIND.other;
+    const statusLabel =
+      p.status_at_eta === 'open'   ? 'OUVERT' :
+      p.status_at_eta === 'closed' ? 'FERMÉ'  : '?';
     const tr = document.createElement('tr');
-    tr.innerHTML =
-      `<td>${p.km.toFixed(1)}</td>
-       <td>${KIND_ICON[p.kind] || '•'} ${p.kind}</td>
-       <td>${(p.name || '—').replace(/</g, '&lt;')}</td>
-       <td>${eta.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</td>
-       <td class="${statusCls}">${p.status_at_eta}</td>
-       <td class="mono">${p.opening_hours ? p.opening_hours.replace(/</g, '&lt;') : '—'}</td>
-       <td>${p.detour_m.toFixed(0)} m</td>`;
+    tr.innerHTML = `
+      <td class="km">${p.km.toFixed(1)}</td>
+      <td class="kind"><span class="glyph">${kind.glyph}</span>${kind.label}</td>
+      <td class="name">${escapeHtml(p.name || '—')}</td>
+      <td class="eta">${fmtTime(eta)}</td>
+      <td class="state-cell"><span class="state ${p.status_at_eta}">${statusLabel}</span></td>
+      <td class="hours">${p.opening_hours ? escapeHtml(p.opening_hours) : '—'}</td>
+      <td class="detour">${p.detour_m.toFixed(0)}<span class="unit-sm">m</span></td>`;
     tb.appendChild(tr);
   }
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
 initStart();
+initEditionDate();
 $('#f').addEventListener('submit', submit);
 </script>
 </body>
