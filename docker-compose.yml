@@ -8,18 +8,10 @@ services:
     environment:
       PORT: "3000"
       DB_PATH: "/app/data/ravito.db"
-      SAMPLE_GPX_DIR: "/app/samples"
       OVERPASS_URL: "https://overpass-api.de/api/interpreter"
       RUST_LOG: "info,ravito_gpx=info"
     volumes:
       - ravito_data:/app/data
-      - ravito_samples:/app/samples
-      # To expose sibling-project GPX files (brm_maps / cyclo_copains), add a
-      # docker-compose.override.yml with e.g.:
-      #   services:
-      #     ravito:
-      #       volumes:
-      #         - /srv/brm_maps/data/gpx:/app/samples/brm:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
@@ -30,4 +22,3 @@ services:
 
 volumes:
   ravito_data:
-  ravito_samples:

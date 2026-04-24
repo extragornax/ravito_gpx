@@ -20,11 +20,7 @@
 
   <form id="f" class="card">
     <div class="field">
-      <label for="sample">Sample GPX</label>
-      <select id="sample"><option value="">— none —</option></select>
-    </div>
-    <div class="field">
-      <label for="gpx">Or paste GPX XML</label>
+      <label for="gpx">Paste GPX XML</label>
       <textarea id="gpx" rows="5" placeholder="<?xml version='1.0' ...><gpx>..."></textarea>
     </div>
     <div class="field">
@@ -87,19 +83,6 @@ const $ = s => document.querySelector(s);
 const KIND_ICON = { bakery: '🥐', supermarket: '🛒', bar_tabac: '☕', fountain: '💧', other: '•' };
 const KIND_COLOR = { bakery: '#c47a2b', supermarket: '#2b6fc9', bar_tabac: '#6a3fb5', fountain: '#2ca7c9', other: '#888' };
 
-async function loadSamples() {
-  try {
-    const r = await fetch('/api/samples');
-    const list = await r.json();
-    const sel = $('#sample');
-    for (const s of list) {
-      const o = document.createElement('option');
-      o.value = s.path; o.textContent = s.name;
-      sel.appendChild(o);
-    }
-  } catch (_) {}
-}
-
 function initStart() {
   const d = new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -112,15 +95,9 @@ async function submit(ev) {
   ev.preventDefault();
   $('#status').textContent = 'Querying OSM…';
   let gpx = $('#gpx').value.trim();
-  const sample = $('#sample').value;
   const upload = $('#upload').files[0];
   try {
     if (upload) gpx = await upload.text();
-    else if (!gpx && sample) {
-      const r = await fetch('/api/sample/' + encodeURIComponent(sample));
-      if (!r.ok) throw new Error('sample fetch failed');
-      gpx = await r.text();
-    }
     if (!gpx) throw new Error('no GPX provided');
     const local = $('#start').value;
     const start = local ? new Date(local).toISOString() : null;
@@ -235,7 +212,6 @@ function renderTable(data) {
   }
 }
 
-loadSamples();
 initStart();
 $('#f').addEventListener('submit', submit);
 </script>

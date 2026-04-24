@@ -1,11 +1,10 @@
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use axum::{
     Json,
-    extract::{Path as AxumPath, State},
-    http::{StatusCode, header},
-    response::{Html, IntoResponse, Response},
+    extract::State,
+    http::StatusCode,
+    response::Html,
 };
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
@@ -17,63 +16,10 @@ use crate::overpass::OverpassCache;
 #[derive(Clone)]
 pub struct AppState {
     pub cache: Arc<OverpassCache>,
-    pub samples_dir: PathBuf,
 }
 
 pub async fn index() -> Html<&'static str> {
     Html(INDEX_HTML)
-}
-
-#[derive(Serialize)]
-pub struct SampleEntry {
-    pub name: String,
-    pub path: String,
-}
-
-pub async fn list_samples(State(s): State<AppState>) -> Json<Vec<SampleEntry>> {
-    Json(collect_samples(&s.samples_dir))
-}
-
-fn collect_samples(root: &Path) -> Vec<SampleEntry> {
-    let mut out = Vec::new();
-    let mut stack = vec![PathBuf::new()];
-    while let Some(rel) = stack.pop() {
-        let Ok(dir) = std::fs::read_dir(root.join(&rel)) else {
-            continue;
-        };
-        for entry in dir.flatten() {
-            let Ok(name) = entry.file_name().into_string() else { continue };
-            if name.starts_with('.') {
-                continue;
-            }
-            let rel_path = rel.join(&name);
-            let abs = root.join(&rel_path);
-            if abs.is_dir() {
-                stack.push(rel_path);
-            } else if name.to_lowercase().ends_with(".gpx") {
-                out.push(SampleEntry {
-                    name: rel_path.to_string_lossy().to_string(),
-                    path: rel_path.to_string_lossy().to_string(),
-                });
-            }
-        }
-    }
-    out.sort_by(|a, b| a.name.cmp(&b.name));
-    out
-}
-
-pub async fn get_sample(
-    State(s): State<AppState>,
-    AxumPath(name): AxumPath<String>,
-) -> Response {
-    if name.contains("..") || name.starts_with('/') {
-        return (StatusCode::BAD_REQUEST, "bad path").into_response();
-    }
-    let p = s.samples_dir.join(&name);
-    match std::fs::read(&p) {
-        Ok(bytes) => ([(header::CONTENT_TYPE, "application/gpx+xml")], bytes).into_response(),
-        Err(_) => (StatusCode::NOT_FOUND, "not found").into_response(),
-    }
 }
 
 #[derive(Deserialize)]
