@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;0,9..144,900;1,9..144,400;1,9..144,700;1,9..144,900&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/ravito/static/app.css">
 </head>
 <body>
 <div class="grain" aria-hidden="true"></div>
@@ -222,7 +222,7 @@ async function submit(ev) {
     const speed_kmh = Number($('#speed').value) || 22;
     const corridor_m = Number($('#corridor').value) || 120;
     const kinds = [...document.querySelectorAll('.kind:checked')].map(k => k.value);
-    const resp = await fetch('/api/analyze', {
+    const resp = await fetch('/ravito/api/analyze', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ gpx, start, speed_kmh, corridor_m, kinds }),

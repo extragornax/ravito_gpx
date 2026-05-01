@@ -10,6 +10,7 @@ use std::sync::Arc;
 use axum::{
     Router,
     extract::DefaultBodyLimit,
+    response::Redirect,
     routing::{get, post},
 };
 use tower_http::trace::TraceLayer;
@@ -36,11 +37,15 @@ async fn main() -> anyhow::Result<()> {
 
     let state = AppState { cache };
 
-    let app = Router::new()
+    let ravito = Router::new()
         .route("/", get(handlers::index))
         .route("/static/app.css", get(handlers::app_css))
         .route("/api/analyze", post(handlers::analyze))
-        .with_state(state)
+        .with_state(state);
+
+    let app = Router::new()
+        .route("/", get(|| async { Redirect::permanent("/ravito") }))
+        .nest("/ravito", ravito)
         .layer(DefaultBodyLimit::max(20 * 1024 * 1024))
         .layer(TraceLayer::new_for_http());
 
