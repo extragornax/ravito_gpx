@@ -10,7 +10,7 @@ use std::sync::Arc;
 use axum::{
     Router,
     extract::DefaultBodyLimit,
-    response::Redirect,
+    response::Html,
     routing::{get, post},
 };
 use tower_http::trace::TraceLayer;
@@ -44,7 +44,9 @@ async fn main() -> anyhow::Result<()> {
         .with_state(state);
 
     let app = Router::new()
-        .route("/", get(|| async { Redirect::permanent("/ravito") }))
+        .route("/", get(|| async {
+            Html(r#"<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="5;url=https://gpx.extragornax.fr/ravito"><title>Moved</title><style>body{font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#f5f5f5}div{text-align:center;padding:2rem;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1)}a{color:#2563eb}</style></head><body><div><p>This app has moved to a new URL:</p><p><a href="https://gpx.extragornax.fr/ravito">https://gpx.extragornax.fr/ravito</a></p><p><small>Please update your bookmarks. You will be redirected in 5 seconds.</small></p></div></body></html>"#)
+        }))
         .nest("/ravito", ravito)
         .layer(DefaultBodyLimit::max(20 * 1024 * 1024))
         .layer(TraceLayer::new_for_http());
